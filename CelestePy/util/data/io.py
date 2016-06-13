@@ -135,40 +135,25 @@ def create_matched_dataset(primary_df, coadd_df):
 # initialization from celeste source df #
 #########################################
 
-def celestedf_row_to_mixparams(src_row):
-    """create a src params object from a celeste dataframe row"""
-    u           = src_row[['ra', 'dec']].values.astype('float64')
-    p_star      = np.clip(src_row.is_star, 1e-6, 1.-1e-6)
-    colors      = ['ug', 'gr', 'ri', 'iz']
-    star_mags   = colors_to_mags(
-        src_row.star_mag_r, src_row[['star_color_%s'%c for c in colors]])
-    star_fluxes = mags2nanomaggies(star_mags)
-    gal_mags    = colors_to_mags(
-        src_row.gal_mag_r, src_row[['gal_color_%s'%c for c in colors]])
-    gal_fluxes  = mags2nanomaggies(gal_mags)
-    gal_shape   = src_row[['gal_fracdev', 'gal_arcsec_scale', 'gal_angle_deg', 'gal_ab']].values
-    gal_shape[2]  = -1.*gal_shape[2]
-    params = SrcMixParams(u, p_star, star_fluxes, gal_fluxes, gal_shape,
-                          objid  = src_row.objid,
-                          run    = src_row.run,
-                          camcol = src_row.camcol,
-                          field  = src_row.field)
-    return params
-
 
 def celestedf_row_to_params(src_row):
     """create a src params object from a celeste dataframe row"""
     u           = src_row[['ra', 'dec']].values.astype('float64')
     p_star      = np.clip(src_row.is_star, 1e-6, 1.-1e-6)
     colors      = ['ug', 'gr', 'ri', 'iz']
-    star_mags   = colors_to_mags(
-        src_row.star_mag_r, src_row[['star_color_%s'%c for c in colors]])
+
+    star_colors = np.array(src_row[['star_color_%s'%c for c in colors] +
+                                   ['star_mag_r']].values, dtype=np.float)
+    star_mags   = colors_to_mags(star_colors)
     star_fluxes = mags2nanomaggies(star_mags)
-    gal_mags    = colors_to_mags(
-        src_row.gal_mag_r, src_row[['gal_color_%s'%c for c in colors]])
-    gal_fluxes  = mags2nanomaggies(gal_mags)
-    gal_shape   = src_row[['gal_fracdev', 'gal_arcsec_scale', 'gal_angle_deg', 'gal_ab']].values
-    gal_shape[2]  = -1.*gal_shape[2]
+
+    gal_colors = np.array(src_row[['gal_color_%s'%c for c in colors] +
+                                  ['gal_mag_r']].values, dtype=np.float)
+    gal_mags   = colors_to_mags(gal_colors)
+    gal_fluxes = mags2nanomaggies(gal_mags)
+    gal_shape  = src_row[['gal_fracdev', 'gal_arcsec_scale',
+                           'gal_angle_deg', 'gal_ab']].values
+    #gal_shape[2]  = -1.*gal_shape[2]
     params = SrcParams(u, a      = ~(p_star>.5),
                           theta  = gal_shape[0],
                           sigma  = gal_shape[1],

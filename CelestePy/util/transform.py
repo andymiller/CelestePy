@@ -1,34 +1,135 @@
 import autograd.numpy as np
 
-#####################################################
-# simple converter between mags and nanomaggies     #
-#####################################################
+#############################################################################
+# simple converter between mags, nanomaggies, and colors, and r-band ratio
+# colors 
+#############################################################################
 
 def mags2nanomaggies(mags):
-    return np.power(10., (mags - 22.5)/-2.5)
+    return np.power(10., (mags - 22.5) / -2.5)
 
 def nanomaggies2mags(nanos):
-    return (-2.5)*np.log10(nanos) + 22.5
+    return (-2.5) * np.log10(nanos) + 22.5
+
+def colors_to_fluxes(colors):
+    """ unconstrains a UGRIZ flux array to color space
+    Args:
+        colors : np.array, fluxes in nanomaggies
+    """
+    return mags2nanomaggies(colors_to_mags(colors))
+
+def fluxes_to_colors(fluxes):
+    return mags_to_colors(nanomaggies2mags(fluxes))
+
+A = np.zeros((5,5))
+A[0,0] = A[1,1] = A[2,2] = A[3,3] = 1.
+A[1,0] = A[2,1] = A[3,2] = A[4,3] = -1
+A[2, -1] = 1.
+Ainv = np.linalg.inv(A)
+
+def mags_to_colors(mags):
+    """ ugriz magnitudes to "color" - which are neighboring ratios
+        colors = [u - g, g - r, r - i, i - z, r]
+    """
+    return np.dot(mags, A)
+
+def colors_to_mags(colors):
+    """ takes [u-g, g-r, r-i, i-z, r] vector of colors to ugriz magnitudes"""
+    return np.dot(colors, Ainv)
 
 
-###########################################################
-# convert between mags and colors  (for sdss ugriz bansd) #
-###########################################################
-colors = ['ug', 'gr', 'ri', 'iz']
+#create transformation matrix that takes log [u g r i z] fluxes, 
+# and turns them into [lu - lr, lg - lr, li - lr, lz - lr, lr]
+#
+# the mixture of gaussians is then a law on this transformed 
+# space
+#
+#  [u g r i z] dot [ 1   0   0   0   0
+#                    0   1   0   0   0
+#                   -1  -1  -1  -1   1
+#                    0   0   1   0   0
+#                    0   0   0   1   0
+#
 
-def mags_to_colors(mags, ridx = 2):
-    rmag = mags[ridx]
-    colors = np.diff(mags[::-1])[::-1]
-    return rmag, colors
+Ar = np.zeros((5,5))
+Ar[0,0] = Ar[1,1] = Ar[3,2] = Ar[4,3] = 1.
+Ar[2, :]  = -1
+Ar[2, -1] = 1.
+Arinv = np.linalg.inv(Ar)
+
+def mags_to_rcolors(mags, ridx = 2):
+    """ takes a vector of ugriz mags, and turns into colors:
+        [lu - lr, lg - lr, li - lr, lz - lr, lr]
+    """
+    return np.dot(mags, A)
+
+def rcolors_to_mags(colors):
+    return np.dot(colors, Ainv)
 
 
-def colors_to_mags(rmag, colors):
-    ug, gr, ri, iz = colors
-    g = gr + rmag
-    u = ug + g
-    i = rmag - ri
-    z = i - iz
-    return np.array([u, g, rmag, i, z])
+###################################################
+# Soft galaxy shape parameterization              #
+###################################################
+
+def rAbPhiToESoft(r, ba, phi):
+    ab    = 1./ba
+    e     = (ab - 1) / (ab + 1)
+    ee    = -np.log(1 - e)
+    angle = np.deg2rad(2.*(-phi))
+    ee1   = ee * np.cos(angle)
+    ee2   = ee * np.sin(angle)
+    return (np.log(r), ee1, ee2)
+
+def eSoftToRAbPhi(logr, ee1, ee2):
+    r  = np.exp(logr)
+    ee    = np.sqrt(ee1*ee1 + ee2*ee2)
+    angle = np.arccos(ee1 / ee)
+    phi   = -.5*np.rad2deg(angle)
+    e  = 1 - np.exp(-ee)
+    ab = - (1. + e) / (e - 1)
+    return r, 1./ab, phi
+
+def unconstrain_gal_shape(shape):
+    """ unconstrains galaxy shape parameters
+    Args: 
+        shape: tuple/list with parameters: 
+                - theta : dev/exp mix
+                - sigma : radial extent in arcsec
+                - phi   : angle of major axis, east of north in [0, 180] deg
+                - rho   : ratio of minor to major axis, in [0, 1]
+    Returns: 
+        lshape : tuple/list that can be inverted w/ constrain_gal_shape
+    """
+    theta, sigma, phi, rho = shape
+    logit_theta  = np.log(theta) - np.log(1. - theta)
+    lr, ee1, ee2 = tu.rAbPhiToESoft(sigma, rho, phi)
+    return np.array([logit_theta, lr, ee1, ee2])
+
+def constrain_gal_shape(lshape):
+    """ Constrains an unconstrained galaxy shape """
+    lg_theta, lr, ee1, ee2 = lshape
+    theta       = 1./(1. + np.exp(-lg_theta))
+    r, rho, phi = tu.eSoftToRAbPhi(lr, ee1, ee2)
+    return np.array([theta, r, phi, rho])
+
+
+if __name__=="__main__":
+
+    # check inverses
+    r = 5.
+    ba = .6
+    phi = -20.
+    lr, ee1, ee2 = rAbPhiToESoft(r, ba, phi)
+    r1, ba1, phi1 = eSoftToRAbPhi(lr, ee1, ee2)
+
+    # check flux => color; color => flux
+    fluxes = np.array([1.25, 9.6, 24.4, 33.07, 40.85])
+    cvec = fluxes_to_colors(fluxes)
+    fvec = colors_to_fluxes(cvec)
+
+    mags = nanomaggies2mags(fluxes)
+    print mags[2], cvec[-1]
+
 
 
 
