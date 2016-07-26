@@ -214,4 +214,25 @@ class FitsImage():
         return self.psf_mog
 
 
+# convert equatorial coordinate to pixel coordinate
+def equa2pixel(s_equa, phi_n, Ups_n_inv, rho_n):
+    """
+        s_equa : [ra, dec] equatorial coordinates
+        rho    : (rho_x, rho_y)    : pixel reference point
+        phi    : (phi_ra, phi_dec) : reference point in equatorial coord
+        Ups    :  2x2 matrix : Projection matrix that takes you from pixel to 
+                  equa coordinates
+    """
+    phi1rad = phi_n[1] / 180. * np.pi
+    s_iwc = np.array([ (s_equa[0] - phi_n[0]) * np.cos(phi1rad),
+                       (s_equa[1] - phi_n[1]) ])
+    s_pix = np.dot(Ups_n_inv, s_iwc) + rho_n
+    return s_pix
+
+def pixel2equa(s_pixel, phi_n, Ups_n, rho_n):
+    phi1rad = phi_n[1] / 180. * np.pi
+    s_iwc   = np.dot(self.Ups_n, s_pixel - self.rho_n)
+    s_equa = np.array([ s_iwc[0]/np.cos(phi1rad) + self.phi_n[0], 
+                                s_iwc[1] + self.phi_n[1] ])
+    return s_equa
 
