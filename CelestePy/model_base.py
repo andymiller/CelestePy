@@ -44,14 +44,15 @@ class CelesteBase(object):
         Initialize a celeste source object from a celeste_df row
         ----------
         Args:
-            celestedf_row: row from a pandas dataframe of celeste df parameters
-            is_star: if True/False, force the initialized object to be a
+            celestedf_row : row from a pandas dataframe of celeste
+                df parameters
+            is_star       : if True/False, force the initialized object to be a
                 star/gal.  If None, will be whatever the row says
         """
         if is_star in [True, False]:
             celestedf_row.is_star = is_star
         params = du.celestedf_row_to_params(celestedf_row)
-        src = self._source_type(params, model=self, imgs=self.images)
+        src    = self._source_type(params, model=self, imgs=self.images)
         # add on some more info for tracking
         src.objid  = celestedf_row.objid
         src.run    = celestedf_row.run
