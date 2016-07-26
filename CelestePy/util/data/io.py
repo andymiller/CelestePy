@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import fitsio
 import rtree
-from CelestePy.util.transform import nanomaggies2mags, mags2nanomaggies, \
+from CelestePy.util.transform import nanomaggies_to_mags, mags_to_nanomaggies, \
                                      colors_to_mags, mags_to_colors
 from CelestePy.source_params import SrcParams, SrcMixParams
 
@@ -145,12 +145,12 @@ def celestedf_row_to_params(src_row):
     star_colors = np.array(src_row[['star_color_%s'%c for c in colors] +
                                    ['star_mag_r']].values, dtype=np.float)
     star_mags   = colors_to_mags(star_colors)
-    star_fluxes = mags2nanomaggies(star_mags)
+    star_fluxes = mags_to_nanomaggies(star_mags)
 
     gal_colors = np.array(src_row[['gal_color_%s'%c for c in colors] +
                                   ['gal_mag_r']].values, dtype=np.float)
     gal_mags   = colors_to_mags(gal_colors)
-    gal_fluxes = mags2nanomaggies(gal_mags)
+    gal_fluxes = mags_to_nanomaggies(gal_mags)
     gal_shape  = src_row[['gal_fracdev', 'gal_arcsec_scale',
                            'gal_angle_deg', 'gal_ab']].values
     #gal_shape[2]  = -1.*gal_shape[2]
@@ -165,8 +165,8 @@ def celestedf_row_to_params(src_row):
 
 def celeste_src_to_dict(src):
     """ returns a celeste dataframe row given a celeste source param object """
-    star_mag_r, star_colors = mags_to_colors(nanomaggies2mags(src.params.star_fluxes))
-    gal_mag_r, gal_colors   = mags_to_colors(nanomaggies2mags(src.params.star_fluxes))
+    star_mag_r, star_colors = mags_to_colors(nanomaggies_to_mags(src.params.star_fluxes))
+    gal_mag_r, gal_colors   = mags_to_colors(nanomaggies_to_mags(src.params.star_fluxes))
     frac_dev, sigma_rad, phi, ab = src.params.gal_shape
     return {
         'objid'           : src.params.objid,

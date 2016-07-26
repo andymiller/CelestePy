@@ -5,27 +5,59 @@ import autograd.numpy as np
 # colors 
 #############################################################################
 
-def mags2nanomaggies(mags):
+def mags_to_nanomaggies(mags):
     return np.power(10., (mags - 22.5) / -2.5)
 
-def nanomaggies2mags(nanos):
+
+def nanomaggies_to_mags(nanos):
     return (-2.5) * np.log10(nanos) + 22.5
 
-def colors_to_fluxes(colors):
-    """ unconstrains a UGRIZ flux array to color space
-    Args:
-        colors : np.array, fluxes in nanomaggies
-    """
-    return mags2nanomaggies(colors_to_mags(colors))
 
-def fluxes_to_colors(fluxes):
-    return mags_to_colors(nanomaggies2mags(fluxes))
+def make_color_flux_converters():
 
-A = np.zeros((5,5))
-A[0,0] = A[1,1] = A[2,2] = A[3,3] = 1.
-A[1,0] = A[2,1] = A[3,2] = A[4,3] = -1
-A[2, -1] = 1.
-Ainv = np.linalg.inv(A)
+    # converter matrix -
+    #create transformation matrix that takes log [u g r i z] fluxes, 
+    # and turns them into [lr, lu - lg, lg - lr, lr - li, li - lz]
+    #
+    # the mixture of gaussians is then a law on this transformed 
+    # space
+    #
+    #  [lu lg lr li lz] dot [ 0   1   0   0   0
+    #                         0  -1   1   0   0
+    #                         1   0  -1   1   0
+    #                         0   0   0  -1   1
+    #                         0   0   0   0  -1 ]
+    A = np.zeros((5,5))
+    A[2,0] = 1.
+    A[0,1] = A[1,2] = A[2,3] = A[3,4] = 1.
+    A[1,1] = A[2,2] = A[3,3] = A[4,4] = -1.
+    Ainv = np.linalg.inv(A)
+
+    def fluxes_to_colors(fluxes):
+        return np.dot(A.T, np.log(fluxes))
+
+    def colors_to_fluxes(colors):
+        return np.exp(np.dot(Ainv.T, colors))
+
+    return fluxes_to_colors, colors_to_fluxes
+
+fluxes_to_colors, colors_to_fluxes = make_color_flux_converters()
+
+#def colors_to_fluxes(colors):
+#    """ unconstrains a UGRIZ flux array to color space
+#    Args:
+#        colors : np.array, fluxes in nanomaggies
+#    """
+#    return mags2nanomaggies(colors_to_mags(colors))
+#
+#def fluxes_to_colors(fluxes):
+#    return mags_to_colors(nanomaggies2mags(fluxes))
+#
+#A = np.zeros((5,5))
+#A[0,0] = A[1,1] = A[2,2] = A[3,3] = 1.
+#A[1,0] = A[2,1] = A[3,2] = A[4,3] = -1
+#A[2, -1] = 1.
+#Ainv = np.linalg.inv(A)
 
 def mags_to_colors(mags):
     """ ugriz magnitudes to "color" - which are neighboring ratios

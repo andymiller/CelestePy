@@ -23,7 +23,7 @@ import astrometry.util.fits as aufits
 import pickle
 import fitsio
 from CelestePy.fits_image import FitsImage
-from CelestePy.util.transform import mags2nanomaggies, nanomaggies2mags
+from CelestePy.util.transform import mags_to_nanomaggies
 
 # constnats 
 BANDS = ['u', 'g', 'r', 'i', 'z']
@@ -82,7 +82,7 @@ def tractor_src_to_celestepy_src(tsrc):
     u = np.array([p for p in pos])
 
     # brightnesses are stored in mags (gotta convert to nanomaggies)
-    fluxes = [mags2nanomaggies(flux) for flux in tsrc.getBrightnesses()[0]]
+    fluxes = [mags_to_nanomaggies(flux) for flux in tsrc.getBrightnesses()[0]]
 
     if type(tsrc) == PointSource:
         return SrcParams(u, a=0, fluxes=fluxes)
