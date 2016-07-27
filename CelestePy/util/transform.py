@@ -34,40 +34,25 @@ def make_color_flux_converters():
     Ainv = np.linalg.inv(A)
 
     def fluxes_to_colors(fluxes):
-        return np.dot(A.T, np.log(fluxes))
+        return np.dot(np.log(fluxes), A)
 
     def colors_to_fluxes(colors):
-        return np.exp(np.dot(Ainv.T, colors))
+        return np.exp(np.dot(colors, Ainv))
 
     return fluxes_to_colors, colors_to_fluxes
 
 fluxes_to_colors, colors_to_fluxes = make_color_flux_converters()
 
-#def colors_to_fluxes(colors):
-#    """ unconstrains a UGRIZ flux array to color space
-#    Args:
-#        colors : np.array, fluxes in nanomaggies
-#    """
-#    return mags2nanomaggies(colors_to_mags(colors))
-#
-#def fluxes_to_colors(fluxes):
-#    return mags_to_colors(nanomaggies2mags(fluxes))
-#
-#A = np.zeros((5,5))
-#A[0,0] = A[1,1] = A[2,2] = A[3,3] = 1.
-#A[1,0] = A[2,1] = A[3,2] = A[4,3] = -1
-#A[2, -1] = 1.
-#Ainv = np.linalg.inv(A)
 
 def mags_to_colors(mags):
     """ ugriz magnitudes to "color" - which are neighboring ratios
-        colors = [u - g, g - r, r - i, i - z, r]
+        colors = [r, u - g, g - r, r - i, i - z]
     """
-    return np.dot(mags, A)
+    return fluxes_to_colors(mags_to_nanomaggies(mags))
 
 def colors_to_mags(colors):
     """ takes [u-g, g-r, r-i, i-z, r] vector of colors to ugriz magnitudes"""
-    return np.dot(colors, Ainv)
+    return nanomaggies_to_mags(colors_to_fluxes(colors))
 
 
 #create transformation matrix that takes log [u g r i z] fluxes, 

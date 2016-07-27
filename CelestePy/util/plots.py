@@ -3,7 +3,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 import numpy as np
 import sys
 import os.path
-from CelestePy import gen_model_image
+#from CelestePy import gen_model_image
 
 def add_colorbar_to_axis(ax, cim):
     """ generic helper function to throw a colorbar onto an axis """
