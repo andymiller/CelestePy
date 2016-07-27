@@ -1,5 +1,5 @@
-from CelestePy.util.transform import nanomaggies2mags
-import numpy as np
+import autograd.numpy as np
+from CelestePy.util.transform import nanomaggies_to_mags
 
 class SrcParams(object):
     """ source parameter object - contains a list of both star and galaxy
@@ -139,11 +139,11 @@ class SrcParams(object):
     @property
     def mag_dict(self):
         return {c:v for c, v in zip(['u', 'g', 'r', 'i', 'z'],
-                                    nanomaggies2mags(self.fluxes))}
+                                    nanomaggies_to_mags(self.fluxes))}
 
     @property
     def mags(self):
-        return nanomaggies2mags(self.fluxes)
+        return nanomaggies_to_mags(self.fluxes)
 
     @property
     def shape(self):
@@ -190,7 +190,7 @@ class SrcMixParams(object):
     @property
     def star_mag_dict(self):
         return {c:v for c, v in zip(['u', 'g', 'r', 'i', 'z'],
-                                    nanomaggies2mags(self.star_fluxes))}
+                                    nanomaggies_to_mags(self.star_fluxes))}
 
     @property
     def gal_flux_dict(self):
@@ -199,15 +199,15 @@ class SrcMixParams(object):
     @property
     def gal_mag_dict(self):
         return {c:v for c, v in zip(['u', 'g', 'r', 'i', 'z'],
-                                    nanomaggies2mags(self.gal_fluxes))}
+                                    nanomaggies_to_mags(self.gal_fluxes))}
 
     @property
     def star_mags(self):
-        return nanomaggies2mags(self.star_fluxes)
+        return nanomaggies_to_mags(self.star_fluxes)
 
     @property
     def gal_mags(self):
-        return nanomaggies2mags(self.gal_fluxes)
+        return nanomaggies_to_mags(self.gal_fluxes)
 
     def is_star(self):
         return self.p_star > .5
