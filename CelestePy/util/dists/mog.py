@@ -59,12 +59,12 @@ class MixtureOfGaussians(object):
         self.icovs = npla.inv(covs)
         self.chols = npla.cholesky(covs)
 
-    def logpdf(self, x):
-        return mog_loglike(x, means=self.means, icovs=self.icovs,
+    def logpdf(self, x, mean_shift=0.):
+        return mog_loglike(x, means=self.means + mean_shift, icovs=self.icovs,
                            dets=self.dets,   pis  = self.pis)
 
-    def pdf(self, x):
-        return np.exp(self.logpdf(x))
+    def pdf(self, x, mean_shift=0.):
+        return np.exp(self.logpdf(x, mean_shift))
 
     def mean(self, x):
         return np.dot(self.pis, self.means)
