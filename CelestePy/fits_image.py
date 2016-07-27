@@ -231,8 +231,8 @@ def equa2pixel(s_equa, phi_n, Ups_n_inv, rho_n):
 
 def pixel2equa(s_pixel, phi_n, Ups_n, rho_n):
     phi1rad = phi_n[1] / 180. * np.pi
-    s_iwc   = np.dot(self.Ups_n, s_pixel - self.rho_n)
-    s_equa = np.array([ s_iwc[0]/np.cos(phi1rad) + self.phi_n[0], 
-                                s_iwc[1] + self.phi_n[1] ])
+    s_iwc   = np.dot(Ups_n, s_pixel - rho_n)
+    s_equa  = np.array([ s_iwc[0]/np.cos(phi1rad) + phi_n[0],
+                         s_iwc[1] + phi_n[1] ])
     return s_equa
 
