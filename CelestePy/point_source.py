@@ -102,22 +102,50 @@ def make_gen_model_image(phi, rho, Ups_inv, psf, band, photons_per_nmgy):
             return scale_unit_flux_image(unit_flux_image, colors)
         return gen_psf_image_fixed_u
 
+
     def get_brightest_radec(img):
         """ given an image with the closure's specification, return the
         brightest pixel in ra, dec """
-        pxy = np.where(img == img.max())[0]
+        ys, xs = np.where(img == img.max())
+        pxy = np.array([xs[0], ys[0]])
         return pixel2equa(pxy)
 
     # TODO add background image
-    def sample_image(params, eps, pixel_grid):
-        mimg = gen_psf_image(params, pixel_grid) + eps
+    def sample_image(params, eps, pixel_grid, background_image=0.):
+        mimg = gen_psf_image(params, pixel_grid) + eps + background_image
         return np.random.poisson(mimg)
 
     return gen_psf_image, get_brightest_radec, \
            sample_image, gen_psf_image_fixed_location_maker
 
 
-def make_lnpdf_fun(imgdict, eps_dict, model_img_funs, u_guess, u_error, pixel_grid, psf_image_fixed_location_makers):
+def make_lnpdf_fun( imgdict, eps_dict,
+                    model_img_funs,
+                    u_guess, u_error, pixel_grid,
+                    psf_image_fixed_location_makers,
+                    background_img_dict = None):
+    """ returns log posterior functions that can be used for finding map or
+    within a MCMC routine 
+
+    Args:
+        - imgdict  : dict of photon count images, indexed by band, imgdict['r'] = NxM array
+        - eps_dict : noise parameters for each
+        - model_img_funs: dict of functions that create a model image,
+                            model_img_funs['r'](params, pixel_grid) = r_mimg
+        - u_guess, u_error: guess where the center of the object should be,
+                            (based on brightest pixel, old catalog)
+        - pixel_grid : list of (x, y) values represented by imgdict images
+        - psf_image_fixed_location_makers: dict of functions, each of which
+                take in a u=(ra,dec) and a pixel_grid, and return a function
+                that generates a model image given a color (holding fixed the 
+                u already passed in).  This function passing intends to cache
+                a unit_psf_image, allowing for the quick lnpdf calculation
+                of the color parameters (so they can be iterated over in a
+                slice-within-gibbs sort of MCMC step)
+        - background_img_dict: dict of images that add to the model image
+            before computing the likelihood.  
+            TODO: combine this with 'eps_dict'
+    """
     def lnpdf(params):
         ll = 0.
         for b, img in imgdict.iteritems():
@@ -164,6 +192,8 @@ def make_lnpdf_fun(imgdict, eps_dict, model_img_funs, u_guess, u_error, pixel_gr
 
 
 def load_color_prior():
+    """ loads a mixture of gaussians object from CelestePy/model_data/...
+    """
     import CelestePy.util.dists.mog as mog
     import CelestePy, os
     import cPickle as pickle
