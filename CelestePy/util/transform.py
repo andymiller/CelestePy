@@ -119,14 +119,14 @@ def unconstrain_gal_shape(shape):
     """
     theta, sigma, phi, rho = shape
     logit_theta  = np.log(theta) - np.log(1. - theta)
-    lr, ee1, ee2 = tu.rAbPhiToESoft(sigma, rho, phi)
+    lr, ee1, ee2 = rAbPhiToESoft(sigma, rho, phi)
     return np.array([logit_theta, lr, ee1, ee2])
 
 def constrain_gal_shape(lshape):
     """ Constrains an unconstrained galaxy shape """
     lg_theta, lr, ee1, ee2 = lshape
     theta       = 1./(1. + np.exp(-lg_theta))
-    r, rho, phi = tu.eSoftToRAbPhi(lr, ee1, ee2)
+    r, rho, phi = eSoftToRAbPhi(lr, ee1, ee2)
     return np.array([theta, r, phi, rho])
 
 
