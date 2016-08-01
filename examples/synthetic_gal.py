@@ -181,8 +181,8 @@ if __name__=="__main__":
     from CelestePy.util.infer.mh import mhstep
     from CelestePy.util.infer.slicesample import slicesample
     Nchains = 8
-    th0s      = 1.1 * np.array([sample_from_prior() for _ in xrange(Nchains)])
-    ll0s      = np.array([ lnpdf(th) for th in th0s ])
+    th0s    = 1.1 * np.array([sample_from_prior() for _ in xrange(Nchains)])
+    ll0s    = np.array([ lnpdf(th) for th in th0s ])
 
     def gibbs_step(params, llth):
         """ steps between colors, u, shape """
@@ -190,25 +190,24 @@ if __name__=="__main__":
         lnpdfu = lnpdf_u_maker(u, shape)
         for _ in range(5):
             colors, _ = slicesample(colors, lnpdfu, compise=True)
-        print " ... colors "
         lnpdf_loc = lambda u: lnpdf(np.concatenate([colors, u, shape]))
         u, ll     = slicesample(u, lnpdf_loc, compwise=False)
-        print " ... loc "
         lnpdf_shp = lambda s: lnpdf(np.concatenate([colors, u, s]))
-        shape, ll = slicesample(shape, lnpdf_shp, compwise=False)
-        print " ... shape "
+        shape, ll = slicesample(shape, lnpdf_shp, compwise=True)
         return np.concatenate([colors, u, shape]), ll
 
     gibbs_funs = [gibbs_step for _ in xrange(Nchains)]
     np.random.seed(42)
-    #print  gibbs_step(true_params, lnpdf(true_params))
+    print " gibbs step ..."
+    gibbs_step(true_params, lnpdf(true_params))
+    print " ... test done"
 
     th_samps, ll_samps = \
-        mcmc_multi_chain(th0s, ll0s, gibbs_funs, Nsamps=500, burnin=100, n_jobs=2)
+        mcmc_multi_chain(th0s, ll0s, gibbs_funs, Nsamps=500, burnin=100, n_jobs=8)
     _, Nsamps, D = th_samps.shape
 
     import cPickle as pickle
-    with open('synthetic_gal_samps.pkl', 'wb') as f:
+    with open('synthetic_gal_samps_3.pkl', 'wb') as f:
         pickle.dump(th_samps, f)
         pickle.dump(ll_samps, f)
 
@@ -238,5 +237,4 @@ if __name__=="__main__":
     names = ['lnr', 'cu', 'cg', 'cr', 'ci', 'ra', 'dec', 'th', 'sig2', 'angle', 'ab']
     plot_chain_marginals(th_samps[:,Nsamps/2:,:], true_params, names)
     plot_pairwise(th_flat, true_params)
-
 
