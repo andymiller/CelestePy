@@ -248,7 +248,8 @@ def make_lnpdf_fun( imgdict, eps_dict,
         return    color_mog.logpdf(colors) \
                - .5*np.dot(u/u_error, u/u_error) \
                + ((gam_shape - 1.)*np.log(sig2) - sig2/gam_scale) \
-               + ((bet_a-1) * np.log(rho) + (bet_b-1) * np.log(1 - rho))
+               + ((bet_a-1) * np.log(rho) + (bet_b-1) * np.log(1 - rho)) \
+               - .5 * shape[0]**2
 
     def sample_from_prior():
         color_samp = color_mog.rvs(size=1)[0]
