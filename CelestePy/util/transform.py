@@ -92,7 +92,7 @@ def rAbPhiToESoft(r, ba, phi):
     ab    = 1./ba
     e     = (ab - 1) / (ab + 1)
     ee    = -np.log(1 - e)
-    angle = np.deg2rad(2.*(-phi))
+    angle = np.deg2rad(phi)
     ee1   = ee * np.cos(angle)
     ee2   = ee * np.sin(angle)
     return (np.log(r), ee1, ee2)
@@ -101,7 +101,7 @@ def eSoftToRAbPhi(logr, ee1, ee2):
     r  = np.exp(logr)
     ee    = np.sqrt(ee1*ee1 + ee2*ee2)
     angle = np.arccos(ee1 / ee)
-    phi   = -.5*np.rad2deg(angle)
+    phi   = np.rad2deg(angle)
     e  = 1 - np.exp(-ee)
     ab = - (1. + e) / (e - 1)
     return r, 1./ab, phi
@@ -133,9 +133,9 @@ def constrain_gal_shape(lshape):
 if __name__=="__main__":
 
     # check inverses
-    r = 5.
+    r = 36.
     ba = .6
-    phi = -20.
+    phi = 95
     lr, ee1, ee2 = rAbPhiToESoft(r, ba, phi)
     r1, ba1, phi1 = eSoftToRAbPhi(lr, ee1, ee2)
 
