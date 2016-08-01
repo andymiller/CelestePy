@@ -4,9 +4,13 @@ General functions for simulating multiple MCMC chains
 import autograd.numpy as np
 import mcmc_diagnostics as mcd
 import pyprind
+from joblib import Parallel, delayed
+
+def mcstep(th, ll, sfun):
+    return sfun(th, ll)
 
 def mcmc_multi_chain(th0s, ll0s, sample_funs, Nsamps, burnin=100,
-                     callback=None, prog_bar=False):
+                     callback=None, prog_bar=False, n_jobs=None):
     import CelestePy.util.infer.mcmc_diagnostics as mcd
     _, D     = th0s.shape
     Nchains  = len(sample_funs)
@@ -21,9 +25,19 @@ def mcmc_multi_chain(th0s, ll0s, sample_funs, Nsamps, burnin=100,
 
     # run each chain forward Nsamps steps
     for n in xrange(1, Nsamps):
-        for k, sfun in enumerate(sample_funs):
-            th_samps[k,n,:], ll_samps[k,n] = \
-                sfun(th_samps[k,n-1,:], ll_samps[k,n-1])
+
+        # serial (no num_jobs specified)
+        if n_jobs is None:
+            for k, sfun in enumerate(sample_funs):
+                th_samps[k,n,:], ll_samps[k,n] = \
+                    sfun(th_samps[k,n-1,:], ll_samps[k,n-1])
+        else:
+            th_ll_list = Parallel(n_jobs=n_jobs, verbose=1)(
+                delayed(mcstep)(th_samps[k,n-1,:], ll_samps[k,n-1], sample_funs[k])
+                                for k in xrange(Nchains)
+                )
+            for k, (th, ll) in enumerate(th_ll_list):
+                th_samps[k,n,:], ll_samps[k,n] = th, ll
 
         # report r hat, and other sampler statistics
         if Nchains > 1:
