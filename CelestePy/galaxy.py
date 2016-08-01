@@ -129,6 +129,9 @@ def make_gen_model_image(phi, rho, Ups_inv, psf, band, photons_per_nmgy):
         pis  = np.array(pis)
         return mog.MixtureOfGaussians(means=means, covs=covs, pis=pis)
 
+    def construct_components_vec(theta_s, u, W):
+        pass
+
     def print_shape(shape):
         cshape = constrain_gal_shape(shape)
         th, sig, phi, rho = cshape
@@ -148,7 +151,8 @@ def make_gen_model_image(phi, rho, Ups_inv, psf, band, photons_per_nmgy):
         # dev/exp mixture of gaussians
         #galmix = mog.MixtureOfGaussians.convex_combine(galaxy_profs,
         #                                               [theta_s, 1.-theta_s])
-        R = gen_rotation_mat(np.deg2rad(180 - phi_s))
+        # TODO this appearance needs to incorporate the Upsilon transformation
+        R = gen_rotation_mat(np.deg2rad(180. - phi_s))
         D = np.diag(np.array([sig_s, sig_s*rho_s]))
         W = np.dot(np.dot(R.T, D), R)
         try:
@@ -193,7 +197,7 @@ def make_gen_model_image(phi, rho, Ups_inv, psf, band, photons_per_nmgy):
         return np.random.poisson(mimg)
 
     return gen_psf_image, get_brightest_radec, \
-           sample_image, gen_psf_image_fixed_unit_image_maker
+           sample_image, gen_psf_image_fixed_unit_image_maker, gen_unit_flux_image
 
 
 def make_lnpdf_fun( imgdict, eps_dict,
@@ -238,16 +242,19 @@ def make_lnpdf_fun( imgdict, eps_dict,
     # load prior over colors
     color_mog = load_color_prior()
 
+    def lngamma(x, shape, scale):
+        return ((shape - 1.)*np.log(x) - sig2/scale)
+
     def logprior(params):
         colors, u, shape = params[0:5], params[5:7] - u_guess, params[7:]
         th, sig2, phi, rho = constrain_gal_shape(shape)
-        gam_shape, gam_scale = 2., 2.
+        gam_shape, gam_scale = 2., 3.
         bet_a, bet_b = 2., 2.
-        if sig2 > 1000 or rho < .0001 or rho > .9999:
+        if sig2 > 10000 or rho < .0001 or rho > .9999 or phi < 0.00001 or phi > 179.9999:
             return -np.inf
         return    color_mog.logpdf(colors) \
                - .5*np.dot(u/u_error, u/u_error) \
-               + ((gam_shape - 1.)*np.log(sig2) - sig2/gam_scale) \
+               - (.5 / 25.) * np.log(sig2)**2 \
                + ((bet_a-1) * np.log(rho) + (bet_b-1) * np.log(1 - rho)) \
                - .5 * shape[0]**2
 
@@ -255,8 +262,8 @@ def make_lnpdf_fun( imgdict, eps_dict,
         color_samp = color_mog.rvs(size=1)[0]
         u_samp = u_guess + np.random.randn(2) * u_error
         shape_samp = np.array([ np.random.rand(),        # theta
-                                np.random.gamma(1, 3),   # sig2
-                                np.random.rand() * 90., # phi
+                                np.exp(1.8*np.random.randn()),   # sig2
+                                np.random.rand() * 180., # phi
                                 np.random.rand()         # rho
                               ])
         return np.concatenate([color_samp, u_samp,
