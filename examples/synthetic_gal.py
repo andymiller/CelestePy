@@ -53,13 +53,14 @@ if __name__=="__main__":
                  'u': 1.2582444245272928,
                  'z': 40.854689375715807}
     eps_dict  = {'u': 28., 'g': 307., 'r': 684., 'i': 817, 'z': 484.}
-    eps_dict  = {b: eps_dict[b] / 10. for b in bands}
-    true_shape= np.array([ .36, # theta_s
-                           36., # sig2_s (in pixels)
-                           45., # phi, north rotation [0, 180]
-                            .2  # rho min / major axis ratio
+    eps_dict  = {b: eps_dict[b] / 100. for b in bands}
+    true_shape= np.array([ .9, # theta_s
+                           40., # sig2_s (in pixels)
+                           90., # phi, north rotation [0, 180]
+                            .1  # rho min / major axis ratio
                          ])
-    true_colors = np.array([1.80342137, -2.00360455, -1.59958647, -0.47531305,  0.34646993])
+    true_colors = np.array([2.80342137, -1.00360455, -.59958647, -0.47531305,  0.34646993])
+    true_colors = 2*np.array([3., -.5, .5, .5, 1.])
     #true_colors = fluxes_to_colors(np.array([flux_dict[b] for b in bands]))
     true_params = np.concatenate([true_colors, true_u,
                                   unconstrain_gal_shape(true_shape)])
@@ -103,14 +104,14 @@ if __name__=="__main__":
                 for b in bands }
 
     # plot observations
-    #from CelestePy.util.plots import add_colorbar_to_axis
-    #fig, axarr = plt.subplots(1, 5, figsize=(16,4))
-    #for b, ax in zip(bands, axarr.flatten()):
-    #    cim = ax.imshow(imgdict[b], interpolation='none')
-    #    add_colorbar_to_axis(ax, cim)
-    #    ax.set_title("band %s"%b)
-    #fig.tight_layout()
-    #sys.exito
+    from CelestePy.util.plots import add_colorbar_to_axis
+    fig, axarr = plt.subplots(1, 5, figsize=(16,4))
+    for b, ax in zip(bands, axarr.flatten()):
+        cim = ax.imshow(imgdict[b], interpolation='none')
+        add_colorbar_to_axis(ax, cim)
+        ax.set_title("band %s"%b)
+    fig.tight_layout()
+    sys.exito
 
     #####################################################
     # create logpdf function handle (and gradient)      #
@@ -213,7 +214,7 @@ if __name__=="__main__":
 
     sys.exit
 
-    with open('synthetic_gal_samps_3.pkl', 'rb') as f:
+    with open('synthetic_gal_samps_4.pkl', 'rb') as f:
         th_samps = pickle.load(f)
         ll_samps = pickle.load(f)
         Nchains, Nsamps, D = th_samps.shape
@@ -232,9 +233,16 @@ if __name__=="__main__":
         np.array([constrain_gal_shape(th[-4:]) for th in th_samps[k,:,:]])
         for k in xrange(th_samps.shape[0])])
     plot_chain_marginals(th_shape[:,Nsamps/2:,:], true_shape, names=['th', 'sig2', 'angle', 'ab'])
+    print th_shape.mean(axis=(0,1))
+    print true_shape 
+
+    import CelestePy.util.infer.mcmc_diagnostics as mcd
+    mcd.compute_n_eff_acf(th_shape[0,:,0])
 
     th_flat = np.row_stack([ th_samps[k][Nsamps/2:,:] for k in xrange(th_samps.shape[0]) ])
     names = ['lnr', 'cu', 'cg', 'cr', 'ci', 'ra', 'dec', 'th', 'sig2', 'angle', 'ab']
     plot_chain_marginals(th_samps[:,Nsamps/2:,:], true_params, names)
     plot_pairwise(th_flat, true_params)
+
+
 

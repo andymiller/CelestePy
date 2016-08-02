@@ -152,7 +152,7 @@ def make_gen_model_image(phi, rho, Ups_inv, psf, band, photons_per_nmgy):
         #galmix = mog.MixtureOfGaussians.convex_combine(galaxy_profs,
         #                                               [theta_s, 1.-theta_s])
         # TODO this appearance needs to incorporate the Upsilon transformation
-        R = gen_rotation_mat(np.deg2rad(180. - phi_s))
+        R = gen_rotation_mat(np.deg2rad(90 - phi_s))
         D = np.diag(np.array([sig_s, sig_s*rho_s]))
         W = np.dot(np.dot(R.T, D), R)
         try:
