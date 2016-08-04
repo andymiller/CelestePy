@@ -50,7 +50,6 @@ def run_star_inference(img_dict, img_constants,
     sample_funs          = { k: img_funs[k][2] for k in bands }
     model_img_fixed_funs = { k: img_funs[k][3] for k in bands }
 
-
     # create img dict or pass it in
     if synthetic_images:
         assert true_params is not None and eps_dict is not None
@@ -119,17 +118,16 @@ def run_synthetic_star_inference(noise_scale=1.):
         ic['phi']   = img_constants['r']['phi'] # make all images have the same reference RA/DEC
         ic['shape'] = (50, 50)
 
-
     # run inference
     th_samps, ll_samps = \
         run_star_inference(img_dict = None,
                            img_constants = img_constants,
                            num_chains = 8,
-                           num_samples_per_chain = 300,
+                           num_samples_per_chain = 500,
                            synthetic_images = True,
                            true_params      = true_params,
                            eps_dict         = eps_dict, 
-                           n_jobs           = 8)
+                           n_jobs           = None)
 
     return th_samps, ll_samps
 
@@ -137,8 +135,11 @@ def run_synthetic_star_inference(noise_scale=1.):
 if __name__=="__main__":
 
     # for a handful of noise scales, run star parameter inference
-    noise_scales = [.1, 1., 2., 4., 8.]
-    res_list     = [run_synthetic_star_inference(ns) for ns in noise_scales]
+    noise_scales = [.1, .5, 1., 2., 4., 8., 16.]
+
+    from joblib import Parallel, delayed
+    res_list = Parallel(n_jobs=len(noise_scales), verbose=1)(
+        delayed(run_synthetic_star_inference)(ns) for ns in noise_scales)
 
     # zip up, and save file
     noise_scale_res = dict(zip(noise_scales, res_list))
